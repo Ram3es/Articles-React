@@ -1,7 +1,6 @@
 import { compose } from "./constants";
 import { actionsCreator } from "../utils";
 import { fetchArticles } from "../store/services";
-import { callbackify } from "util";
 
 export const actions = actionsCreator(compose);
 

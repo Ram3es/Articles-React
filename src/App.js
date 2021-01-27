@@ -11,7 +11,7 @@ const theme = createMuiTheme({});
 export default () => (
   <MuiThemeProvider theme={theme}>
     <Switch>
-      {/*<Auth>{publicRouter.map((route) => routeAssessor(null, route))}</Auth>*/}
+      {publicRouter.map((route) => routeAssessor(null, route))}
       <Main>{privateRouter().map((route) => routeAssessor(null, route))}</Main>
     </Switch>
   </MuiThemeProvider>

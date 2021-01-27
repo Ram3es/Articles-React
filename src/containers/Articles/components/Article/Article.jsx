@@ -8,6 +8,15 @@ import { withRouter } from "react-router";
 import { actions } from "../../../../store/actions";
 import { Form, Field, Formik } from "formik";
 import FORMS from "../../constants/forms";
+import {
+  Grid,
+  Container,
+  TextField,
+  FormControl,
+  OutlinedInput,
+  FormHelperText,
+  Button,
+} from "@material-ui/core";
 import { v4 as uuidv4 } from "uuid";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import CKEditor from "@ckeditor/ckeditor5-react";
@@ -19,7 +28,7 @@ export default withRouter(
     },
   }) => {
     const dispatch = useDispatch();
-    const [article, setArticle] = useState(null);
+    //const [article, setArticle] = useState(null);
     const classes = useStyles();
 
     useEffect(() => {
@@ -40,20 +49,22 @@ export default withRouter(
     };
 
     const handleRemoveArticle = () => {
-      dispatch(actions.REMOVE_ARTICLES.REQUEST(id));
+      dispatch(actions.REMOVE_ARTICLES.REQUEST(Number(id)));
       dispatch(push(ROUTES_PATH.ARTICLES));
     };
 
     const handleSubmit = (data) => {
-      if (selectedArticle) {
-        handleChangeArticle(data);
+      const payload = {
+        ...data,
+        image_url: "https://picsum.photos/id/237/200/300",
+      };
+      console.log(data, "data submit");
+      delete paylad.image; //  to do
+
+      if (id) {
+        handleChangeArticle(payload); //  data ?
       } else {
-        dispatch(
-          actions.ADD_ARTICLES.REQUEST({
-            ...data,
-            image_url: "https://picsum.photos/id/237/200/300",
-          })
-        );
+        dispatch(actions.ADD_ARTICLES.REQUEST(payload));
         dispatch(push(ROUTES_PATH.ARTICLES));
       }
     };
@@ -67,11 +78,14 @@ export default withRouter(
     };
 
     return (
-      <div className="article">
-        {/*<img src={article.image_url} alt={article.title} />*/}
+      <>
         <Formik
           enableReinitialize={true}
-          initialValues={article ? article : FORMS.ARTICLE.INIT}
+          initialValues={
+            selectedArticle
+              ? { ...selectedArticle, image: selectedArticle.image_url }
+              : FORMS.ARTICLE.INIT
+          }
           validateOnChange={true}
           validateOnBlur={true}
           validationSchema={FORMS.ARTICLE.SCHEME}
@@ -81,21 +95,114 @@ export default withRouter(
             const {
               errors,
               touched,
-              values: { title, description },
+              values: { title, description, image },
+              handleChange,
             } = props;
             return (
               <Form>
-                <Field name="title" id="title" type="text" values={title} />
-                <div>{getErrors(errors, touched, "title")}</div>
+                <div className={classes.heroContent}>
+                  <Container>
+                    <div className={classes.heroButtons}>
+                      <Grid container spacing={2}>
+                        <Grid item>
+                          <Button
+                            className={classes.button}
+                            onClick={() => dispatch(push(ROUTES_PATH.ARTICLES))}
+                            variant="contained"
+                          >
+                            &larr; Back
+                          </Button>
+                          <Button
+                            type="submit"
+                            className={classes.button}
+                            variant="contained"
+                            color="primary"
+                          >
+                            {id !== "new"
+                              ? "Save changes"
+                              : "Create new Article"}
+                          </Button>
+                          {id !== "new" ? (
+                            <Button
+                              className={classes.button}
+                              variant="contained"
+                              color="secondary"
+                              onClick={handleRemoveArticle}
+                            >
+                              Remove
+                            </Button>
+                          ) : null}
+                        </Grid>
+                      </Grid>
+                    </div>
+                  </Container>
+                </div>
+                <Container className={classes.cardGrid}>
+                  <div className={classes.formFieldWrapper}>
+                    <Grid container spacing={3}>
+                      <Grid item xs={3}>
+                        {image ? (
+                          <img className={classes.image} src={image} alt="" />
+                        ) : null}
+                        <FormControl fullWidth margin="dense">
+                          <OutlinedInp
+                            ut
+                            fullWidth
+                            error={touched.image && Boolean(errors.image)}
+                            onChange={async (e) => {
+                              e.persist();
+                              const [image] = e.target.files;
 
-                <Field
-                  name="title"
-                  id="title"
-                  type="text"
-                  values={description}
-                />
-                <div>{getErrors(errors, touched, "description")}</div>
-                <button type="submit"> Save Changes</button>
+                              if (image) {
+                                const base64ImageUrl = await fileReaderToBase64(
+                                  image
+                                );
+                                setFieldValue("image", base64ImageUrl);
+                                setFieldTouched(e.target.name, true, false);
+                              }
+                            }}
+                            id="image"
+                            inputProps={{ name: "image" }}
+                            type="file"
+                          />
+                          <FormHelperText error={Boolean(errors.image)}>
+                            {touched.image && errors.image}
+                          </FormHelperText>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={9}>
+                        <TextField
+                          error={touched.title && Boolean(errors.title)}
+                          fullWidth
+                          name="title"
+                          id="title"
+                          onChange={(e) => {
+                            setFieldValue("title", e.target.value);
+                            setFieldTouched("title", true, false);
+                          }}
+                          value={title}
+                          margin="dense"
+                          label="Title"
+                          variant="outlined"
+                          helperText={touched.name && errors.name}
+                        />
+                        <FormControl className={classes.editor}>
+                          <CKEditor
+                            name="description"
+                            id="description"
+                            editor={ClassicEditor}
+                            data={description}
+                            onChange={(e, editor) => {
+                              const data = editor.getData();
+                              setFieldValue("description", data);
+                              setFieldTouched("description", true, false);
+                            }}
+                          />
+                        </FormControl>
+                      </Grid>
+                    </Grid>
+                  </div>
+                </Container>
               </Form>
             );
           }}
@@ -103,7 +210,7 @@ export default withRouter(
         <button type="button" onClick={handleRemoveArticle}>
           Remove
         </button>
-      </div>
+      </>
     );
   }
 );
